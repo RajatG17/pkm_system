@@ -43,3 +43,5 @@ coverage.xml
 *.swo
 *.bak
 *.tmp
+
+backend/uploads/
