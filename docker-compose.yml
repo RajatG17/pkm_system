@@ -1,13 +1,29 @@
 
 services: 
+
+  ollama:
+    image: ollama/ollama:latest
+    platform: linux/arm64
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama:/root/uploads
+    restart: unless-stopped
+
   backend:
     build: ./backend
+    environment:
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      EMBEDDING_MODEL: "nomic-embed-text"
+    depends_on: [ollama]
     ports:
       - "8000:8000" 
     volumes:
       - ./backend/uploads:/app/uploads
+      - ./backend/data:/app/data
   frontend:
     build: ./frontend
     ports:
       - "5173:5173"
-    
+volumes:
+  ollama:    
