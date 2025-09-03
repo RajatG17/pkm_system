@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query
 from ..embeddings import embed_batch
-from ..indexer import create_or_load_index, search as faiss_search
+from ..indexer import create_or_load_index, search as faiss_search, load_meta
 import ujson
 import numpy as np
 
@@ -13,17 +13,26 @@ def l2_normalize(arr):
 @router.get("")
 async def search(q = Query(...), k: int=5):
     vec=  await embed_batch([q])
-    arr = l2_normalize(np.array(vec, dtype="float32"))
-    index= create_or_load_index(arr.shape[1])
-    scores, ids = faiss_search(index, arr[0], top_k=k)
+    arr = l2_normalize(np.array(vec, dtype="float32"))[0]
+
+    # load index
+    index= create_or_load_index(arr.shape[0])
+    scores, ids = faiss_search(index, arr, top_k=k)
 
     # read metadata linearly 
-    metas = []
-    with open("data/chunks.jsonl", "r", encoding='utf-8') as f:
-        for i, line in enumerate(f):
-            if i in ids:
-                metas.append(ujson.loads(line))
-        
-    return {"query": q, "results": [
-        {"score": float(s), **m} for s, m in sorted(zip(scores, metas), key=lambda x:-x[0])
-    ]}
+    meta = load_meta()
+    # meta check
+    print(meta)
+    out = []
+    seen = set()
+    for s,i in sorted(zip(scores, ids), key=lambda x: -x[0]):
+        m = meta.get(str(i))
+        if not m:
+            continue
+        key = (m["doc_path"], m["position"])
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({"score": float(s), "id":int(i), **m})
+
+    return {"query": q, "results": out}

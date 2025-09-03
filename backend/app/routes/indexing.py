@@ -2,7 +2,8 @@ from fastapi import APIRouter
 from .upload import UPLOAD_DIR
 from ..chunking import chunk_text
 from ..embeddings import embed_batch
-from ..indexer import create_or_load_index, save_index, append_metadata
+from ..indexer import create_or_load_index, save_index, save_meta
+import faiss
 import os, glob, numpy as np
 
 router = APIRouter()
@@ -28,6 +29,9 @@ async def reindex():
         for i, piece in enumerate(parts):
             chunks.append(piece)
             meta.append({'doc_path': path, 'chunk_id': len(meta), 'position': i})
+    
+    if not chunks:
+        return {"indexed_chunks": 0, "dimensions": 0}
 
     # embed
     vecs = await embed_batch(chunks)
@@ -36,15 +40,27 @@ async def reindex():
 
     # Index
     dim = arr.shape[1]
-    index = create_or_load_index(dim)
-    index.add(arr)
+    base = faiss.IndexFlatIP(dim)
+    index = faiss.IndexIDMap2(base)
+
+    ids = np.arange(len(chunks), dtype=np.int64)
+    index.add_with_ids(arr, ids)
     save_index(index)
-    append_metadata(meta)
+    meta_dict = {str(i): m for i, m in zip(ids.tolist(), meta)}
+    save_meta(meta_dict)
 
     return {"indexed_chunks": len(chunks), "dimensions": dim}
 
 
     
-
+@router.post("/reset")
+async def reset_index():
+    removed = []
+    for p in ("data/index.faiss", "data/chunks.json"):
+        if os.path.exists(p):
+            os.remove(p)
+            removed.append(p)
+    
+    return {"reset": removed}
     
 
