@@ -4,6 +4,7 @@ import httpx
 
 OLLAMA = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 EMBEDDING_MODEL = os.getenv("EMBEDING_MODEL", "nomic-embed-text")
+GEN_MODEL = os.getenv("GEN_MODEL", "llama3.1:8b")
 
 async def _wait_for_ollama(timeout = 60):
     deadline = asyncio.get_event_loop().time() + timeout
@@ -25,12 +26,14 @@ async def _model_is_present():
         r.raise_for_status()
         models = r.json().get("models", []) or []
         names= {m.get("name") or m.get("model") for m in models if m}
-        return EMBEDDING_MODEL in names
+        return EMBEDDING_MODEL in names and GEN_MODEL in names
     
 async def _pull_model(stream = False):
     async with httpx.AsyncClient(timeout=None) as client:
         r = await client.post(f"{OLLAMA}/api/pull",
                               json={"name": EMBEDDING_MODEL, "stream": stream})
+        r = await client.post(f"{OLLAMA}/api/pull",
+                              json={"name": GEN_MODEL, "stream": stream})
         r.raise_for_status()
 
 async def ensure_model_present():

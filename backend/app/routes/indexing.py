@@ -28,7 +28,11 @@ async def reindex():
         parts = chunk_text(text)
         for i, piece in enumerate(parts):
             chunks.append(piece)
-            meta.append({'doc_path': path, 'chunk_id': len(meta), 'position': i})
+            meta.append({
+    "doc_path": path,
+    "position": i,
+    "text_preview": piece.strip().replace("\n\n", "\n")[:500]  # longer preview
+})
     
     if not chunks:
         return {"indexed_chunks": 0, "dimensions": 0}

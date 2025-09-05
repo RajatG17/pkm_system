@@ -15,6 +15,7 @@ services:
     environment:
       OLLAMA_BASE_URL: "http://ollama:11434"
       EMBEDDING_MODEL: "nomic-embed-text"
+      GEN_MODEL: "llama3.1:8b"
     depends_on: [ollama]
     ports:
       - "8000:8000" 

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routes import upload, indexing, search
+from .routes import upload, indexing, search, qa
 from .ollama_ready import ensure_model_present
 from fastapi.middleware.cors import CORSMiddleware
 import logging, os
@@ -29,3 +29,4 @@ async def health_check():
 app.include_router(upload.router, prefix="/files")
 app.include_router(indexing.router, prefix="/index")
 app.include_router(search.router, prefix="/search")
+app.include_router(qa.router, prefix="/qa")
