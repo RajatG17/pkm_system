@@ -17,7 +17,7 @@ def l2_normalize(arr):
 @router.get("")
 async def qa(q: str = Query(..., description="User question"),
              k: int = 5,
-             max_ctx_chars: int = 1200):
+             max_ctx_chars: int = 2400):
     """
     Minimal RAG:
       1) embed question

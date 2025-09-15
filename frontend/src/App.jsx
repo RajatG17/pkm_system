@@ -1,34 +1,32 @@
 import { useState } from "react";
-
-function App() {
-  const [file, setFile] = useState(null);
-
-  const handleUpload = async () => {
-    if (!file) return alert("Please select a file first");
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const res = await fetch("http://localhost:8000/files/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    alert(JSON.stringify(await res.json()));
-  };
-
+import UploadBox from "./components/UploadBox";
+import QABox from "./components/QABox";
+import SearchBox from "./components/SearchBox";
+  
+export default function App() {
   return (
-    <div className="p-10 margin-auto">
-      <h1 className="text-2xl font-bold mb-4">PKM System</h1>
-      <input type="file" onChange={e => setFile(e.target.files[0])} />
-      <button
-        onClick={handleUpload}
-        className="ml-2 px-4 py-2 bg-blue-500 text-white rounded"
-      >
-        Upload
-      </button>
-    </div>
-  );
-}
+    <div className="max-w-4xl mx-auto p-6 space-y-8">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-bold">PKM Assistant</h1>
+        <p className="text-gray-600">Upload - Search - Ask</p>
+      </header>
 
-export default App;
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold">Upload</h2>
+        <UploadBox />
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text=lg font-semibold">Search</h2>
+        <SearchBox />
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold">Ask</h2>
+        <QABox />
+      </section>
+    </div>
+
+  );
+
+}

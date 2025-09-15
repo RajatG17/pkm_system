@@ -46,3 +46,6 @@ coverage.xml
 
 backend/uploads/
 backend/data/
+frontend/.gitignore
+hello.txt
+
