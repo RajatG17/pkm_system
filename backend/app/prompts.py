@@ -15,6 +15,7 @@ def build_qa_prompt(question: str, contexts: list[dict]) -> str:
 
     return f"""You are a precise assistant. Use ONLY the provided context to answer.
 If the answer is not in the context, say "I don't know from the provided documents."
+If the context states answer explicitly, state it clearly.
 
 Question:
 {question}
@@ -24,8 +25,6 @@ Context:
 
 Instructions:
 - Be concise (3–6 sentences).
-- Cite sources inline like [1], [2].
-- If multiple sources support a claim, cite all relevant ones.
 - Do not invent facts outside the context.
 
 Answer:"""

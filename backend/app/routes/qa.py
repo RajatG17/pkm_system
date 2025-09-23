@@ -4,6 +4,7 @@ import numpy as np, os, httpx
 from ..embeddings import embed_batch
 from ..indexer import create_or_load_index, load_meta, search as faiss_search
 from ..prompts import build_qa_prompt
+from ..cache import qa_cache
 
 router = APIRouter()
 
@@ -25,6 +26,10 @@ async def qa(q: str = Query(..., description="User question"),
       3) trim context so prompt stays small
       4) call Ollama generate
     """
+    ## cache
+    ck = (q, k, max_ctx_chars)
+    cached = qa_cache.get(ck)
+    if cached: return cached
     # 1) Embed query
     vec = await embed_batch([q])
     qv = l2_normalize(np.array(vec, dtype="float32"))[0]
@@ -64,7 +69,7 @@ async def qa(q: str = Query(..., description="User question"),
         r.raise_for_status()
         answer = r.json().get("response", "").strip()
 
-    return {
+    payload = {
         "question": q,
         "answer": answer,
         "sources": [
@@ -79,3 +84,7 @@ async def qa(q: str = Query(..., description="User question"),
             if meta.get(str(i))
         ]
     }
+
+    qa_cache.set(ck, payload)
+
+    return payload

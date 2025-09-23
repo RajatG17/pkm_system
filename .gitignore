@@ -44,8 +44,10 @@ coverage.xml
 *.bak
 *.tmp
 
+# backend
 backend/uploads/
-backend/data/
+backend/data/*
 frontend/.gitignore
 hello.txt
+data/
 

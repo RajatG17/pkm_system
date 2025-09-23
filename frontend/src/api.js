@@ -32,3 +32,14 @@ export async function reindex() {
     if (!r.ok) throw new Error(`Reindex failed: ${r.status}`);
     return r.json();
 }
+
+export async function incremental() {
+    const r = await fetch(`${API_BASE}/index/incremental`, {method: "POST"});
+    if (!r.ok) throw new Error(`Incremental failed: ${r.status}`);
+    return r.json();
+}
+
+export async function health() {
+    const r = await fetch(`${API_BASE}/health`);
+    return r.ok;
+}
