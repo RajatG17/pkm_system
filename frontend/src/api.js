@@ -43,3 +43,12 @@ export async function health() {
     const r = await fetch(`${API_BASE}/health`);
     return r.ok;
 }
+
+export async function fetchContext(id, radius=1) {
+    const url = new URL(`${API_BASE}/context`);
+    url.searchParams.set("id", id);
+    url.searchParams.set("radius", radius);
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`Context failed: ${r.radius}`);
+    return r.json();
+}

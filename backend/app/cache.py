@@ -25,4 +25,5 @@ class LRU:
 
 embed_cache = LRU(256)
 qa_cache = LRU(128)
+search_cache = LRU(128)
 

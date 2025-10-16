@@ -10,12 +10,30 @@ from ..indexer import (create_or_load_index, save_index, load_meta, save_meta,
 from ..extract import extract_text
 import faiss
 import os, time, glob, numpy as np
-
-
-
-
+from app.db import SessionLocal, Document, Chunk
 
 router = APIRouter()
+
+def upsert_document(path, hash, chunks):
+    db = SessionLocal()
+    try:
+        doc = db.query(Document).filter_by(path=path).first()
+        if not doc:
+            doc = Document(path=path, hash=hash, type=path.split(".")[-1])
+            db.add(doc)
+            db.flush()
+        else:
+            db.query(Chunk).filter_by(document_id=doc.id).delete()
+            doc.hash = hash
+        
+        for pos, chunk_text in enumerate(chunks):
+            db.add(Chunk(document_id=doc.id, position=pos, text=chunk_text))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"[DB ERROR] Failed upert for {path}: {e}")
+    finally:
+        db.close()
 
 def _doc_hash_from_path(path: str):
     try:
@@ -97,6 +115,7 @@ async def incremental_index():
         if not chunks:
             docmap[path] = {"doc_hash": new_doc_hash, "chunk_ids":[]}
             continue
+        upsert_document(path, new_doc_hash, chunks)
             
         B = 64
         embeddings = []
@@ -114,11 +133,27 @@ async def incremental_index():
 
         index.add_with_ids(arr, ids)
 
+        db = SessionLocal()
+        try:
+ 
+            doc = db.query(Document).filter_by(path=path).first()
+            if doc:
+                chunks_db = db.query(Chunk).filter_by(document_id=doc.id).order_by(Chunk.position).all()
+                for cid, chunk_db in zip(ids.tolist(), chunks_db):
+                    chunk_db.embedding_id = int(cid)
+                db.commit()
+            db.close()
+        except Exception as e:
+            print(f"[DB ERROR] Failed to update embedding_ids for {path}: {e}")
+        finally:
+            db.close()
+
         cur_ids = ids.tolist()
         for local_pos, (cid, chunk) in enumerate(zip(cur_ids, chunks)):
             new_meta_items[str(int(cid))] = {
                 "doc_path": path,
                 "position": local_pos,
+                "text": chunk,
                 "text_preview": chunk.strip().replace("\n\n", "\n")[:500]
             }
         docmap[path] = {"doc_hash": new_doc_hash, "chunk_ids": cur_ids}
