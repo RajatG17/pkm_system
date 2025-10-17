@@ -5,6 +5,7 @@ from ..embeddings import embed_batch
 from ..indexer import create_or_load_index, load_meta, search as faiss_search
 from ..prompts import build_qa_prompt
 from ..cache import qa_cache
+from app.db import get_chunks_by_ids
 
 router = APIRouter()
 
@@ -38,24 +39,39 @@ async def qa(q: str = Query(..., description="User question"),
     index = create_or_load_index(qv.shape[0])
     scores, ids = faiss_search(index, qv, top_k=k)
 
-    meta = load_meta()
+    # Fetch chunk + doc info from DB : Replace by DB retrieval using FAISS IDs
+    # meta = load_meta()
+    # contexts = []
+    # total = 0
+    # for i in ids:
+    #     m = meta.get(str(i))
+    #     if not m: 
+    #         continue
+    #     preview = (m.get("text_preview") or "").strip()
+    #     # Trim per-chunk to keep prompt brisk
+    #     trimmed = preview[:max(100, min(len(preview), max_ctx_chars // max(1, k)))]
+    #     contexts.append({**m, "text_preview": trimmed})
+    #     total += len(trimmed)
+
+    chunks = get_chunks_by_ids(ids)
     contexts = []
     total = 0
-    for i in ids:
-        m = meta.get(str(i))
-        if not m: 
-            continue
-        preview = (m.get("text_preview") or "").strip()
-        # Trim per-chunk to keep prompt brisk
+
+    for c in chunks:
+        preview = c["text_preview"]
         trimmed = preview[:max(100, min(len(preview), max_ctx_chars // max(1, k)))]
-        contexts.append({**m, "text_preview": trimmed})
+        contexts.append({
+            "doc_path": c["doc_path"],
+            "position": c["position"],
+            "text_preview": trimmed
+        })
         total += len(trimmed)
 
     # 3) Build prompt
     prompt = build_qa_prompt(q, contexts)
 
     # 4) Generate with Ollama
-    async with httpx.AsyncClient(timeout=180) as client:
+    async with httpx.AsyncClient(timeout=300) as client:
         r = await client.post(f"{OLLAMA}/api/generate", json={
             "model": GEN_MODEL,
             "prompt": prompt,
@@ -69,19 +85,36 @@ async def qa(q: str = Query(..., description="User question"),
         r.raise_for_status()
         answer = r.json().get("response", "").strip()
 
+    ## Builds from meta, to be replaced by DB fetch above
+    # payload = {
+    #     "question": q,
+    #     "answer": answer,
+    #     "sources": [
+    #         {
+    #             "id": i,
+    #             "score": float(s),
+    #             "doc_path": meta.get(str(i), {}).get("doc_path"),
+    #             "position": meta.get(str(i), {}).get("position"),
+    #             "preview": meta.get(str(i), {}).get("text_preview", "")[:240]
+    #         }
+    #         for s, i in sorted(zip(scores, ids), key=lambda x: -x[0])
+    #         if meta.get(str(i))
+    #     ]
+    # }
+
     payload = {
         "question": q,
         "answer": answer,
         "sources": [
             {
-                "id": i,
+                "id": c["embedding_id"],
                 "score": float(s),
-                "doc_path": meta.get(str(i), {}).get("doc_path"),
-                "position": meta.get(str(i), {}).get("position"),
-                "preview": meta.get(str(i), {}).get("text_preview", "")[:240]
+                "doc_path": c["doc_path"],
+                "position": c["position"],
+                "preview": c["text_preview"][:240]
             }
-            for s, i in sorted(zip(scores, ids), key=lambda x: -x[0])
-            if meta.get(str(i))
+            for s, c in sorted(zip(scores, chunks), key=lambda x: -x[0])
+            if c.get("embedding_id")
         ]
     }
 

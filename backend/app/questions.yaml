@@ -1,0 +1,28 @@
+# Each item is one evaluation question.
+# Fields:
+#   q:               the question text
+#   k:               (optional) top-K to retrieve; defaults to 4
+#   max_ctx_chars:   (optional) per-run context budget; defaults to 2000
+#   expect:          (optional) signals to check hit@K
+#     doc_path:      (optional) exact path or substring of expected doc
+#     position:      (optional) expected chunk position (integer)
+#     pos_radius:    (optional) allowed +/- positions (default 0)
+#     contains:      (optional) list of substrings expected in preview
+
+- q: "What is Overclockart?"
+  k: 4
+  expect:
+    doc_path: "uploads/"
+    contains: ["similarity search", "dense vectors"]
+
+- q: "Summarize the key features."
+  k: 5
+  expect:
+    doc_path: "uploads/"
+    contains: ["chunk", "embed", "index"]
+
+- q: "What can be improved?"
+  k: 3
+  expect:
+    doc_path: "uploads/"
+    contains: ["pdf", "markdown", "code", "txt"]

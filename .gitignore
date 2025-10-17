@@ -47,7 +47,6 @@ coverage.xml
 # backend
 backend/uploads/
 backend/data/*
-frontend/.gitignore
 hello.txt
-data/
+ollama/
 
