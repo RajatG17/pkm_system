@@ -47,9 +47,12 @@ async def search(q = Query(...), k: int=5):
     #     out.append({"score": float(s), "id":int(i), **m})
 
     chunks = get_chunks_by_ids(ids)
+    ## sanity print
+    print(chunks[0])
     out = [
         {
             "score": float(s),
+            "id": c["embedding_id"],
             **c
         }
         for s, c in sorted(zip(scores, chunks), key=lambda x: -x[0])

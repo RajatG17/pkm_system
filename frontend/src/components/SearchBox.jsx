@@ -17,12 +17,18 @@ export default function SearchBox() {
   const [queryForHL, setQueryForHL] = useState("");
 
   const openContext = async(id) => {
-    if (id && isNaN(Number(id))){
-      const data = await fetchContext(id, 1);
+    // console.log("Opening context for id:", id);
+    if (id !== undefined && !isNaN(Number(id))){
+      try{
+        const data = await fetchContext(id, 1);
       setModalData(data);
       setModalOpen(true);
+      }catch(e){
+        setErr(`Failed to fetch context: ${e.message}`);
+      }
     }
     else{
+      console.warn("Invalid document ID:", id);
       setErr("Invalid document ID");
     }
     
