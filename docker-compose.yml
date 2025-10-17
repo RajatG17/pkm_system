@@ -1,13 +1,29 @@
 
 services: 
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama:/root/.ollama
+    restart: unless-stopped
+
   backend:
     build: ./backend
+    env_file:
+      - ./backend/config/.env
+    depends_on:
+      - ollama
     ports:
       - "8000:8000" 
     volumes:
       - ./backend/uploads:/app/uploads
+      - ./backend/data:/app/data
+
   frontend:
     build: ./frontend
     ports:
       - "5173:5173"
-    
+volumes:
+  ollama:    

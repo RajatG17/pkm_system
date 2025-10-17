@@ -1,0 +1,9 @@
+{
+  "total_questions": 3,
+  "hit_at_k": 0.0,
+  "answer_coverage": 1.0,
+  "qa_p50_ms": 165473.776,
+  "qa_p95_ms": 177180.071,
+  "search_p50_ms": null,
+  "search_p95_ms": null
+}

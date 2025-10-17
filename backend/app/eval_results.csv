@@ -1,0 +1,11 @@
+idx,q,k,max_ctx_chars,hit@k,grounded_answer,latency_ms,n_sources,top_source,answer
+1,What is Overclockart?,4,2000,False,True,177208.1,4,uploads/OverclocKart_Project_Report.pdf#0,"Overclockart is a cloud-native, microservices-driven e-commerce platform built to demonstrate scalability, modularity, and performance optimization. It combines a React + Vite frontend with PostgreSQL databases for a rel database. The platform decomposes traditional e-commerce functionality into independent services coordinated through a central API Gateway. Overclockart is designed to showcase distributed-systems skills and provides rapid page loads and efficient development builds."
+2,Summarize the key features.,5,2000,False,True,165489.9,5,uploads/README.md#0,"Here is a summary of the key features:
+
+OverclocKart is a cloud-native, microservices-driven e-commerce platform that decomposes traditional e-commerce functionality into independent services. Key features include:
+* Containerization with Docker for reproducibility across environments
+* FastAPI and Flask services for high performance and efficient development builds
+* Vite-based frontend for rapid page loads and efficient development builds
+* API Gateway for clean separation from backend services
+* Service isolation, scalability, modularity, and performance optimization."
+3,What can be improved?,3,2000,False,True,117852.0,3,uploads/README.md#0,"According to [2] (uploads/OverclocKart_Project_Report.pdf#5), several enhancements could be pursued for OverclocKart, including adding support for ""su"" (which is likely short for ""support user"" or similar). However, no specific details are provided about what can be improved."

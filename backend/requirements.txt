@@ -1,3 +1,16 @@
 fastapi
 uvicorn[standard]
 python-multipart
+pymupdf
+pydantic
+markdown-it-py
+python-magic
+chardet
+regex
+beautifulsoup4
+tiktoken
+faiss-cpu
+httpx
+ujson
+alembic
+sqlalchemy
