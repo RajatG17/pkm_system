@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Query
+
+from ..utils.filters import filter_chunks
 from ..embeddings import embed_batch
 from ..indexer import create_or_load_index, search as faiss_search, load_meta
 from ..cache import search_cache
 import ujson
 import numpy as np
-from app.db import get_chunks_by_ids
-
+from app.db import get_chunks_by_ids, SessionLocal, Document, Chunk
+from datetime import datetime
 
 router = APIRouter()
 
@@ -14,11 +16,17 @@ def l2_normalize(arr):
     return arr/n
 
 @router.get("")
-async def search(q = Query(...), k: int=5):
+async def search(
+    q = Query(...), 
+    k: int=5,
+    file_type: str | None = Query(None, description="Filter by file type"),
+    tag: str | None = Query(None, description="Filter by tag"),
+    modified_after: str | None = Query(None, description="Filter documents modified after this date"),
+):
     """
     Search for relevant chunks given a query string."""
     ## search cache
-    ck = (q, k)
+    ck = (q, k, file_type, tag, modified_after)
     cached = search_cache.get(ck)
 
     if cached: return cached
@@ -28,7 +36,7 @@ async def search(q = Query(...), k: int=5):
 
     # load index
     index= create_or_load_index(arr.shape[0])
-    scores, ids = faiss_search(index, arr, top_k=k)
+    scores, ids = faiss_search(index, arr, top_k=k*3) # retrieve more to filter later
 
     ## read metadata linearly : replace by DB retrieval using FAISS IDs
     # meta = load_meta()
@@ -47,18 +55,9 @@ async def search(q = Query(...), k: int=5):
     #     out.append({"score": float(s), "id":int(i), **m})
 
     chunks = get_chunks_by_ids(ids)
-    ## sanity print
-    print(chunks[0])
-    out = [
-        {
-            "score": float(s),
-            "id": c["embedding_id"],
-            **c
-        }
-        for s, c in sorted(zip(scores, chunks), key=lambda x: -x[0])
-        if c.get("embedding_id")
-    ]
-
+    # sanity print
+    chunks = filter_chunks(chunks, file_type=file_type, tag=tag, modified_after=modified_after)
+    out = sorted(chunks, key=lambda x: -scores[chunks.index(x)])[:k]
     payload = {"query": q, "results": out}
     search_cache.set(ck, payload)
 

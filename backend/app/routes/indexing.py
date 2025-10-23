@@ -18,13 +18,25 @@ def upsert_document(path, hash, chunks):
     db = SessionLocal()
     try:
         doc = db.query(Document).filter_by(path=path).first()
+        file_type = path.split(".")[-1].lower()
+        file_size = os.path.getsize(path)
+        modified_time = time.ctime(os.path.getmtime(path))
         if not doc:
-            doc = Document(path=path, hash=hash, type=path.split(".")[-1])
+            doc = Document(
+                path=path, 
+                hash=hash, 
+                type=file_type,
+                size = file_size,
+                tags=""
+            )
             db.add(doc)
             db.flush()
         else:
             db.query(Chunk).filter_by(document_id=doc.id).delete()
             doc.hash = hash
+            doc.modified = modified_time
+            doc.size = file_size
+            doc.type = file_type
         
         for pos, chunk_text in enumerate(chunks):
             db.add(Chunk(document_id=doc.id, position=pos, text=chunk_text))

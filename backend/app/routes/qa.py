@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Query
 import numpy as np, os, httpx
 
+from ..utils.filters import filter_chunks
 from ..embeddings import embed_batch
 from ..indexer import create_or_load_index, load_meta, search as faiss_search
 from ..prompts import build_qa_prompt
@@ -19,7 +20,11 @@ def l2_normalize(arr):
 @router.get("")
 async def qa(q: str = Query(..., description="User question"),
              k: int = 5,
-             max_ctx_chars: int = 2400):
+             max_ctx_chars: int = 1800,
+             file_type: str | None = Query(None),
+             tag: str | None = Query(None),
+             modified_after: str | None = Query(None)
+):
     """
     Minimal RAG:
       1) embed question
@@ -28,7 +33,7 @@ async def qa(q: str = Query(..., description="User question"),
       4) call Ollama generate
     """
     ## cache
-    ck = (q, k, max_ctx_chars)
+    ck = (q, k, max_ctx_chars, file_type, tag, modified_after)
     cached = qa_cache.get(ck)
     if cached: return cached
     # 1) Embed query
@@ -54,21 +59,14 @@ async def qa(q: str = Query(..., description="User question"),
     #     total += len(trimmed)
 
     chunks = get_chunks_by_ids(ids)
-    contexts = []
-    total = 0
-
-    for c in chunks:
-        preview = c["text_preview"]
-        trimmed = preview[:max(100, min(len(preview), max_ctx_chars // max(1, k)))]
-        contexts.append({
-            "doc_path": c["doc_path"],
-            "position": c["position"],
-            "text_preview": trimmed
-        })
-        total += len(trimmed)
+    chunks = filter_chunks(chunks, file_type=file_type, tag=tag, modified_after=modified_after)
+    chunks = sorted(chunks, key=lambda x: -scores[chunks.index(x)])[:k]
+    
+    context_text = "\n\n".join(c["text_preview"] for c in chunks)
+    # prompt = f"Question: {q}\n\nContext:\n{context_text}\n\nAnswer clearly and concisely based on the context provided."
 
     # 3) Build prompt
-    prompt = build_qa_prompt(q, contexts)
+    prompt = build_qa_prompt(q, chunks)
 
     # 4) Generate with Ollama
     async with httpx.AsyncClient(timeout=300) as client:
@@ -78,7 +76,7 @@ async def qa(q: str = Query(..., description="User question"),
             "stream": False,
             "options": {
                 "num_ctx": 4096,
-                "temperature": 0.2,
+                "temperature": 0.6,
                 "top_p": 0.9
             }
         })
@@ -105,16 +103,22 @@ async def qa(q: str = Query(..., description="User question"),
     payload = {
         "question": q,
         "answer": answer,
+        "filters": {
+            "file_type": file_type,
+            "tag": tag,
+            "modified_after": modified_after
+        },
         "sources": [
             {
                 "id": c["embedding_id"],
-                "score": float(s),
                 "doc_path": c["doc_path"],
                 "position": c["position"],
-                "preview": c["text_preview"][:240]
+                "preview": c["text_preview"][:240],
+                "tags": c.get("tags", ""),
+                "type": c.get("type", ""),
+                "modified": c.get("modified", ""),
             }
-            for s, c in sorted(zip(scores, chunks), key=lambda x: -x[0])
-            if c.get("embedding_id")
+            for c in chunks
         ]
     }
 

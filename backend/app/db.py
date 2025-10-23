@@ -26,6 +26,8 @@ class Document(Base):
     hash = Column(String, index=True)
     modified = Column(DateTime, server_default=func.now(), onupdate=func.now())
     type = Column(String)
+    size = Column(Integer, default=0)
+    tags = Column(String, default="") 
 
     chunks = relationship("Chunk", back_populates="document", cascade="all, delete-orphan")
 
