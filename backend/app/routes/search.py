@@ -57,7 +57,11 @@ async def search(
     chunks = get_chunks_by_ids(ids)
     # sanity print
     chunks = filter_chunks(chunks, file_type=file_type, tag=tag, modified_after=modified_after)
-    out = sorted(chunks, key=lambda x: -scores[chunks.index(x)])[:k]
+    
+    out = sorted(chunks, key=lambda x: -scores[chunks.index(x)])
+    for i, c in enumerate(out):
+        c["score"] = float(scores[chunks.index(c)])
+        c["id"] = int(c["embedding_id"])
     payload = {"query": q, "results": out}
     search_cache.set(ck, payload)
 

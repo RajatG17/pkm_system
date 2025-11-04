@@ -15,6 +15,9 @@ export default function SearchBox() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
   const [queryForHL, setQueryForHL] = useState("");
+  const [fileType, setFileType] = useState("all");
+  const [tag, setTag] = useState("");
+  const [modifiedAfter, setModifiedAfter] = useState("");
 
   const openContext = async(id) => {
     // console.log("Opening context for id:", id);
@@ -45,7 +48,16 @@ export default function SearchBox() {
     setLoading(true);
     try {
       setQueryForHL(q);
-      const data = await search(true);
+
+      const params = new URLSearchParams({
+        q,
+        k,
+        file_type: fileType !== "all" ? fileType: "",
+        tag, 
+        modified_after: modifiedAfter
+      })
+      // const data = await fetch(`/search?${params.toString()}`).then(res => res.json());
+      const data = await search(q, k, fileType !== "all" ? fileType: "", tag, modifiedAfter);
       
       const filtered = (type === "all") ? data.results:
         data.results.filter(r => {
@@ -56,7 +68,7 @@ export default function SearchBox() {
           if (type === "code") return isCode;
           return true;
         });
-      setRes({...data, results: filtered});
+      setRes({...data, results: filtered });
     } catch(e){
       setErr(e.message);
     }finally{
@@ -93,6 +105,35 @@ export default function SearchBox() {
           </button>
         </div>
       </div>
+      <div className="flex flex-col sm:flex-row gap-2 text-sm text-zinc-300">
+        <select 
+          value={fileType}
+          onChange={e => setFileType(e.target.value)}
+          className="border border-zinc-700 rounded-md bg-zinc-950 px-2 py-1 w-full sm:w-auto">
+            <option value="all">All</option>
+            <option value="pdf">PDFs</option>
+            <option value="md">Markdown</option>
+            <option value="py">Python</option>
+            <option value="js">JavaScript</option>
+            <option value="java">Java</option>
+          </select>
+        
+        <input
+          type="text"
+          value={tag}
+          onChange={e => setTag(e.target.value)}
+          placeholder="Tag filter (e.g. ML)"
+          className="border border-zinc-700 rounded-md bg-zinc-950 px-2 py-1 flex-1"
+        />
+
+        <input
+          type="date"
+          value={modifiedAfter}
+          onChange={e => setModifiedAfter(e.target.value)}
+          className="border border-zinc-700 rounded-md bg-zinc-950 px-2 py-1 w-full sm:w-auto"
+          title="Modified After"
+        />
+      </div>
 
       {err && <div className="text-red-400 text-sm">{err}</div>}
 
@@ -102,8 +143,8 @@ export default function SearchBox() {
             <li key={i} className="py-3">
               <div className="text-sm break-all">
                 <span className="font-semibold underline underline-offset-2">
-                  <button className="font-semibold underline ubderline-offset-2" onClick={() => openContext(r.id)} title="Open source context">
-                    {r.doc_path}#{r.position}
+                  <button className="font-semibold underline underline-offset-2" onClick={() => openContext(r.id)} title="Open source context">
+                    {r.doc_path} #{r.position}
                   </button>
                 </span>
                 <span className="ml-2 text-zinc-400">score: {r.score?.toFixed?.(3)}</span>
@@ -123,7 +164,7 @@ export default function SearchBox() {
           {modalData?.context?.map((c) => (
             <div key={c.id}>
               <div className={`text-xs text-zinc-400 mb-1 ${c.id===modalData.center ? "font-semibold" : ""}`}>
-                {c.doc_path}#{c.position} {c.id===modalData.center ? "• (match)" : ""}
+                {c.doc_path}#{c.position} {c.id===modalData.center ? " • (match)" : ""}
               </div>
               <div className="whitespace-pre-wrap text-sm text-zinc-100">{HL(c.text)}</div>
             </div>

@@ -193,7 +193,7 @@ async def incremental_index():
 @router.post("/reset")
 async def reset_index():
     removed = []
-    for p in ("data/index.faiss", "data/chunks.json", "data/doc_index.json", "data/id_counter.json"):
+    for p in ("data/index.faiss", "data/chunks.json", "data/doc_index.json", "data/id_counter.json", "data/pkm.db"):
         if os.path.exists(p):
             os.remove(p)
             removed.append(p)

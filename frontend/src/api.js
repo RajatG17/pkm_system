@@ -1,9 +1,12 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
-export async function search(q, k=5) {
+export async function search(q, k=5, fileType="", tag="", modifiedAfter="") {
     const url = new URL(`${API_BASE}/search`);
     url.searchParams.set("q", q);
     url.searchParams.set("k", k);
+    url.searchParams.set("file_type", fileType);
+    url.searchParams.set("tag", tag);
+    url.searchParams.set("modified_after", modifiedAfter);
     const r = await fetch(url);
     if (!r.ok) throw new Error(`Search failes: ${r.status}`);
     return r.json();
