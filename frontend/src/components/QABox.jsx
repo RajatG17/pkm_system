@@ -4,8 +4,8 @@ import Modal from "./Modal";
 
 export default function QABox(){
     const [q, setQ] = useState("");
-    const [k, setK] = useState(2);
-    const [maxCtx, setMaxCtx] = useState(1800);
+    const [k, setK] = useState(1);
+    const [maxCtx, setMaxCtx] = useState(1500);
     const [loading, setLoading] = useState(false);
     const [res, setRes] = useState(null);
     const [err, setErr] = useState("");
@@ -25,7 +25,7 @@ export default function QABox(){
             }
         }else{
             console.warn("Invalid document ID:", id);
-            setErr("Invalid document ID");
+            setErr(`Invalid document ID ${id}`);
         }
     }
 
@@ -78,7 +78,7 @@ export default function QABox(){
                         <code className="text-xs sm:text-sm">
                             <button className="font-semibold underline underline-offset-2" 
                                 onClick={() => openContext(s.id, 1)} title="Open source location" >
-                                    {s.doc_path}#{s.position}
+                                    {s.doc_path} # {s.position}
                             </button>
                         </code>
                         <span className="text-zinc-400"> · score {s.score?.toFixed?.(3)}</span>
