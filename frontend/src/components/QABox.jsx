@@ -25,7 +25,7 @@ export default function QABox(){
             }
         }else{
             console.warn("Invalid document ID:", id);
-            setErr("Invalid document ID");
+            setErr(`Invalid document ID ${id}`);
         }
     }
 

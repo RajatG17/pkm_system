@@ -32,7 +32,7 @@ Built modularly, with each phase introducing a core feature, it can scale from a
 
 ---
 
-##  Architecture
+## Architecture
 
 ```text
                         ┌───────────────────────┐
@@ -54,11 +54,11 @@ Built modularly, with each phase introducing a core feature, it can scale from a
  │  • /qa → LLM-powered Q&A                                 │
  │                                                          │
  │ Components:                                              │
- │  🧠 Embeddings via Ollama (Gemma / Llama)                │
- │  🔍 FAISS Vector Index (local)                           │
- │  💾 SQLite metadata DB (Document, Chunk, Tag)            │
- │  🧰 Cache layer (LRU / Redis-ready)                      │
- │  📈 (TODO) Prometheus metrics for latency + accuracy     │
+ │  Embeddings via Ollama 		                              │
+ │  FAISS Vector Index (local)                              │
+ │  SQLite metadata DB (Document, Chunk, Tag)               │
+ │  Cache layer (LRU / Redis-ready)                         │
+ │  (TODO) Prometheus metrics for latency + accuracy        │
  └──────────────────────────────────────────────────────────┘
 ```
 
